@@ -174,6 +174,7 @@ def normalize_path(path: str) -> str:
     - Ensures leading slash
     - Strips trailing slash
     - Normalizes all {paramName} to canonical camelCase
+    - Resolves known version placeholders to concrete versions
     - Strips query strings
     """
     # Strip query strings
@@ -186,6 +187,10 @@ def normalize_path(path: str) -> str:
     # Strip trailing slash
     path = path.rstrip("/")
 
+    # Resolve version placeholders to concrete versions
+    # The TS SDK uses {_version} but all endpoints are actually v4
+    path = path.replace("{_version}", "v4")
+
     # Normalize each path parameter
     def replace_param(m: re.Match) -> str:
         param = m.group(1)
@@ -193,6 +198,34 @@ def normalize_path(path: str) -> str:
         return "{" + canonical + "}"
 
     path = re.sub(r"\{([^}]+)\}", replace_param, path)
+
+    # Normalize positional parameter aliases
+    # albumLinkId at album child position is just linkId
+    path = re.sub(r"/albums/\{albumLinkId\}", "/albums/{linkId}", path)
+    # parentLinkId in folder context is just linkId
+    path = re.sub(r"/folders/\{parentLinkId\}", "/folders/{linkId}", path)
+
+    # Resolve generic {id} to context-specific names based on parent collection
+    path = re.sub(r"/addresses/\{id\}", "/addresses/{addressId}", path)
+    path = re.sub(r"/labels/\{id\}", "/labels/{labelId}", path)
+    path = re.sub(r"/members/\{id\}", "/members/{memberId}", path)
+    path = re.sub(r"/groups/\{id\}", "/groups/{groupId}", path)
+    path = re.sub(r"/contacts/\{id\}", "/contacts/{contactId}", path)
+    path = re.sub(r"/features/\{id\}", "/features/{featureCode}", path)
+    path = re.sub(r"/features/\{featureId\}", "/features/{featureCode}", path)
+    path = re.sub(r"/features/\{code\}", "/features/{featureCode}", path)
+    path = re.sub(r"/keys/\{id\}", "/keys/{keyId}", path)
+    path = re.sub(r"/events/\{id\}", "/events/{eventId}", path)
+    path = re.sub(r"/sessions/\{id\}", "/sessions/{sessionId}", path)
+    path = re.sub(r"/devices/\{id\}", "/devices/{deviceId}", path)
+    path = re.sub(r"/domains/\{id\}", "/domains/{domainId}", path)
+    path = re.sub(r"/invitations/\{id\}", "/invitations/{invitationId}", path)
+    path = re.sub(r"/volumes/\{id\}", "/volumes/{volumeId}", path)
+    path = re.sub(r"/shares/\{id\}", "/shares/{shareId}", path)
+    path = re.sub(r"/links/\{id\}", "/links/{linkId}", path)
+    path = re.sub(r"/messages/\{id\}", "/messages/{messageId}", path)
+    path = re.sub(r"/calendars/\{id\}", "/calendars/{calendarId}", path)
+    path = re.sub(r"/notifications/\{id\}", "/notifications/{notificationId}", path)
 
     return path
 
