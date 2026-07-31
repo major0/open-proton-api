@@ -7,7 +7,6 @@ This is the broadest-coverage source, covering ALL Proton services:
 Drive, Mail, Calendar, Meet, Lumo, Docs, VPN, Core.
 """
 
-import json
 import re
 import sys
 from pathlib import Path
@@ -223,17 +222,17 @@ def group_by_path(endpoints: list[dict]) -> dict[str, dict]:
 
 def path_to_dir(path: str) -> Path:
     """Convert an API path to a directory under api/."""
-    parts = path.lstrip("/").split("/")
-    return API_DIR / "/".join(parts)
+    from src.pathutil import API_DIR, normalize_path
+    from src.pathutil import path_to_dir as _path_to_dir
+
+    return _path_to_dir(normalize_path(path), API_DIR)
 
 
 def write_endpoint(endpoint: dict, output_dir: Path) -> None:
-    """Write an endpoint definition to its source file."""
-    output_dir.mkdir(parents=True, exist_ok=True)
-    output_file = output_dir / f"{SOURCE_NAME}.json"
-    with open(output_file, "w") as f:
-        json.dump(endpoint, f, indent=2)
-        f.write("\n")
+    """Write an endpoint definition to its source file via pathutil."""
+    from src.pathutil import write_endpoint as _write
+
+    _write(endpoint.get("path", ""), endpoint.get("operations", {}), SOURCE_NAME)
 
 
 def main() -> None:

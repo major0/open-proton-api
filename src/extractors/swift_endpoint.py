@@ -10,7 +10,6 @@ Handles two patterns:
 The source name is determined by which repository is being processed.
 """
 
-import json
 import re
 import sys
 from pathlib import Path
@@ -170,17 +169,17 @@ def extract_path_params(url: str) -> dict[str, dict]:
 
 def path_to_dir(path: str) -> Path:
     """Convert API path to directory under api/."""
-    parts = path.lstrip("/").split("/")
-    return API_DIR / "/".join(parts)
+    from src.pathutil import API_DIR, normalize_path
+    from src.pathutil import path_to_dir as _ptd
+
+    return _ptd(normalize_path(path), API_DIR)
 
 
 def write_endpoint(endpoint: dict, output_dir: Path, source_name: str) -> None:
-    """Write endpoint definition to source file."""
-    output_dir.mkdir(parents=True, exist_ok=True)
-    output_file = output_dir / f"{source_name}.json"
-    with open(output_file, "w") as f:
-        json.dump(endpoint, f, indent=2)
-        f.write("\n")
+    """Write endpoint definition to source file via pathutil."""
+    from src.pathutil import write_endpoint as _write
+
+    _write(endpoint.get("path", ""), endpoint.get("operations", {}), source_name)
 
 
 def extract_source(source_dir: Path, source_name: str) -> int:

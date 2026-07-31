@@ -10,7 +10,6 @@ This is the highest-fidelity source since it's machine-generated from the
 canonical spec.
 """
 
-import json
 import re
 import sys
 from pathlib import Path
@@ -25,8 +24,7 @@ SOURCE_NAME = "protondrive-sdk-ts"
 # Patterns for parsing the openapi-typescript output
 PATH_ENTRY_RE = re.compile(r'^\s+"(/[^"]+)":\s*\{')
 METHOD_REF_RE = re.compile(
-    r"^\s+(?:/\*\*[^*]*\*/\s+)?"
-    r"(get|post|put|delete|patch):\s*operations\[\"([^\"]+)\"\]"
+    r"^\s+(?:/\*\*[^*]*\*/\s+)?" r"(get|post|put|delete|patch):\s*operations\[\"([^\"]+)\"\]"
 )
 METHOD_NEVER_RE = re.compile(r"^\s+(get|post|put|delete|patch)\?:\s*never;")
 OPERATION_ENTRY_RE = re.compile(r'^\s+"([^"]+)":\s*\{')
@@ -413,23 +411,18 @@ def build_endpoint(
 
 
 def path_to_dir(path: str, service: str) -> Path:
-    """Convert an API path to a directory path under api/.
+    """Convert an API path to a directory path under api/."""
+    from src.pathutil import API_DIR, normalize_path
+    from src.pathutil import path_to_dir as _ptd
 
-    /drive/shares/{shareID}/files/{linkID}/revisions
-    → api/drive/shares/{shareID}/files/{linkID}/revisions/
-    """
-    # Strip leading slash and split
-    parts = path.lstrip("/").split("/")
-    return API_DIR / "/".join(parts)
+    return _ptd(normalize_path(path), API_DIR)
 
 
 def write_endpoint(endpoint: dict, output_dir: Path) -> None:
-    """Write an endpoint definition to its source file."""
-    output_dir.mkdir(parents=True, exist_ok=True)
-    output_file = output_dir / f"{SOURCE_NAME}.json"
-    with open(output_file, "w") as f:
-        json.dump(endpoint, f, indent=2)
-        f.write("\n")
+    """Write an endpoint definition to its source file via pathutil."""
+    from src.pathutil import write_endpoint as _write
+
+    _write(endpoint.get("path", ""), endpoint.get("operations", {}), SOURCE_NAME)
 
 
 def extract_file(filepath: Path, service_prefix: str) -> int:

@@ -15,6 +15,22 @@ completeness. This project:
 3. Computes consensus (what all sources agree on) via a compaction pass
 4. Renders the result as a publishable OpenAPI 3.1 specification
 
+## Path Normalization
+
+All paths, endpoints, and parameter names are normalized to comply with
+[RESTful API naming conventions](https://restfulapi.net/resource-naming/):
+
+- Path segments use lowercase nouns: `/drive/shares`, `/mail/v4/messages`
+- Path parameters use camelCase: `{shareId}`, `{linkId}`, `{volumeId}`
+- Consistent `Id` suffix (not `ID`): `{messageId}` not `{messageID}`
+- No encoding prefixes: `{shareId}` not `{enc_shareID}`
+- No trailing slashes
+
+Different sources use different conventions (TypeScript SDK uses `{shareID}`,
+WebClients use `{shareId}`, Android uses `{enc_shareID}`). The normalization
+layer in `src/pathutil.py` maps all variants to a single canonical form so
+that the same logical endpoint from all sources resolves to the same directory.
+
 ## Directory Structure
 
 ```
@@ -40,13 +56,27 @@ make report    → generate provenance/gap analysis
 make all       → full pipeline
 ```
 
+## Source Configuration
+
+Sources and extractors are managed via `sources.yaml`. Each source can be
+enabled or disabled without editing the Makefile:
+
+```yaml
+sources:
+  protondrive-sdk:
+    url: https://github.com/ProtonDriveApps/sdk.git
+    enabled: true
+    extractors:
+      - protondrive_sdk_ts
+```
+
 ## Endpoint Definition Format
 
 Each endpoint is a directory under `api/` mirroring the REST path. Within each
 directory, one JSON file per source contains that source's view of the endpoint:
 
 ```
-api/drive/shares/{shareID}/files/{linkID}/revisions/
+api/drive/shares/{shareId}/files/{linkId}/revisions/
 ├── common.json              (computed by compactor)
 ├── protondrive-sdk-ts.json  (from TypeScript SDK extractor)
 ├── webclient.json           (from WebClients extractor)
@@ -59,10 +89,10 @@ format specification.
 ## Adding a New Extractor
 
 1. Create `src/extractors/your_source.py` with a `main()` function
-2. Parse your source and emit one JSON file per endpoint into `api/`
+2. Parse your source and emit endpoints using `src.pathutil.write_endpoint()`
 3. Validate output against `schema/endpoint.json`
-4. Add the entry point to `pyproject.toml` under `[project.scripts]`
-5. Add the make target to `Makefile`
+4. Add the extractor module name to your source's entry in `sources.yaml`
+5. Run `make extract` to verify
 
 ## Setup
 
@@ -82,4 +112,5 @@ make all
 - Meet (meetings, participants, access tokens)
 - Docs (documents, collaboration)
 - Lumo (waitlist, invitations)
+- Pass (vaults, items, aliases, breach monitoring)
 - VPN (connections, servers, settings)
