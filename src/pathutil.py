@@ -229,7 +229,87 @@ def normalize_path(path: str) -> str:
     path = re.sub(r"/calendars/\{id\}", "/calendars/{calendarId}", path)
     path = re.sub(r"/notifications/\{id\}", "/notifications/{notificationId}", path)
 
+    # Keys/user context
+    path = re.sub(r"/keys/user/\{id\}", "/keys/user/{userKeyId}", path)
+
+    # Filters
+    path = re.sub(r"/filters/\{id\}", "/filters/{filterId}", path)
+
+    # SAML configs — {uid} is the same config ID
+    path = re.sub(r"/saml/configs/\{uid\}", "/saml/configs/{id}", path)
+
+    # Organizations logo
+    path = re.sub(r"/organizations/logo/\{id\}", "/organizations/logo/{logoId}", path)
+
+    # Group members — memberId and groupMemberId are the same resource
+    path = re.sub(r"/groups/members/\{memberId\}", "/groups/members/{groupMemberId}", path)
+    # Groups owners — {id} is the same as specific param
+    path = re.sub(r"/groups/owners/accept/\{id\}", "/groups/owners/accept/{inviteId}", path)
+    path = re.sub(r"/groups/owners/add/\{id\}", "/groups/owners/add/{groupMemberId}", path)
+
+    # Drive share URLs
+    path = re.sub(r"/urls/\{urlId\}", "/urls/{shareUrlId}", path)
+
+    # Drive external invitations — invitationId and externalInvitationId are same
+    path = re.sub(
+        r"/external-invitations/\{externalInvitationId\}",
+        "/external-invitations/{invitationId}",
+        path,
+    )
+
+    # Drive share members
+    path = re.sub(
+        r"/v2/shares/\{shareId\}/members/\{shareMemberId\}",
+        "/v2/shares/{shareId}/members/{memberId}",
+        path,
+    )
+
+    # Pass — sharedId and fromShareId are just shareId
+    path = re.sub(r"/pass/v1/share/\{sharedId\}", "/pass/v1/share/{shareId}", path)
+    path = re.sub(r"/pass/v1/share/\{fromShareId\}", "/pass/v1/share/{shareId}", path)
+
+    # Pass vault — vaultShareId is just shareId
+    path = re.sub(r"/pass/v1/vault/\{vaultShareId\}", "/pass/v1/vault/{shareId}", path)
+
+    # Pass breach custom email
+    path = re.sub(r"/breach/custom_email/\{emailId\}", "/breach/custom_email/{customEmailId}", path)
+
+    # Pass invite group token
+    path = re.sub(r"/invite/group/\{groupInviteToken\}", "/invite/group/{inviteToken}", path)
+
+    # Members invitations — memberId at this position is invitationId
+    path = re.sub(
+        r"/members/invitations/\{memberId\}",
+        "/members/invitations/{invitationId}",
+        path,
+    )
+
+    # Malformed params from extractors
+    path = re.sub(r"\{data\.JWT\}", "{jwt}", path)
+
+    # Share URL context — generic {id} is shareUrlId
+    path = re.sub(r"/urls/\{shareId\}/\{id\}", "/urls/{shareId}/{shareUrlId}", path)
+
     return path
+
+
+def is_valid_path(path: str) -> bool:
+    """Check if a normalized path is a valid API endpoint.
+
+    Rejects paths that are clearly extraction errors (dynamic URLs,
+    malformed parameters, etc.).
+    """
+    # Must start with a known service prefix
+    if not path.startswith("/"):
+        return False
+    # Reject paths where the first segment is a parameter (dynamic URLs)
+    first_segment = path.lstrip("/").split("/")[0]
+    if first_segment.startswith("{"):
+        return False
+    # Reject paths with obviously malformed params
+    return (
+        "(" not in path and ")" not in path and "." not in path.split("/")[-1].replace(".json", "")
+    )
 
 
 def path_to_dir(path: str, api_dir: Path) -> Path:
@@ -251,8 +331,12 @@ def write_endpoint(path: str, operations: dict, source_name: str) -> None:
 
     This is the single entry point all extractors should use for output.
     It ensures consistent path normalization and directory structure.
+    Skips invalid/malformed paths silently.
     """
     normalized = normalize_path(path)
+    if not is_valid_path(normalized):
+        return
+
     endpoint: dict = {"path": normalized, "operations": operations}
     path_params = extract_path_params(normalized)
     if path_params:
