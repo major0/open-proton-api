@@ -44,7 +44,7 @@ sources:
 
   android-mail:
     url: https://github.com/ProtonMail/android-mail.git
-    enabled: true
+    enabled: false  # Uses Rust SDK (uniffi) — no parseable API definitions
     extractors: []
 
   android-pass:
