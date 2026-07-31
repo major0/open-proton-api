@@ -1,0 +1,61 @@
+# Source repositories and their extractors.
+# Set enabled: false to skip a source during fetch/extract.
+
+sources:
+  protondrive-sdk:
+    url: https://github.com/ProtonDriveApps/sdk.git
+    enabled: true
+    extractors:
+      - protondrive_sdk_ts
+
+  webclient:
+    url: https://github.com/ProtonMail/WebClients.git
+    enabled: true
+    extractors:
+      - webclient
+
+  go-proton-api:
+    url: https://github.com/ProtonMail/go-proton-api.git
+    enabled: true
+    extractors:
+      - go_proton_api
+
+  proton-bridge:
+    url: https://github.com/ProtonMail/proton-bridge.git
+    enabled: true
+    extractors: []
+
+  protoncore-android:
+    url: https://github.com/ProtonMail/protoncore_android.git
+    enabled: true
+    extractors: []
+
+  android-drive:
+    url: https://github.com/ProtonDriveApps/android-drive.git
+    enabled: true
+    extractors: []
+
+  ios-drive:
+    url: https://github.com/ProtonDriveApps/ios-drive.git
+    enabled: true
+    extractors: []
+
+  android-mail:
+    url: https://github.com/ProtonMail/android-mail.git
+    enabled: true
+    extractors: []
+
+  android-pass:
+    url: https://github.com/protonpass/android-pass.git
+    enabled: true
+    extractors: []
+
+  ios-pass:
+    url: https://github.com/protonpass/ios-pass.git
+    enabled: true
+    extractors: []
+
+  proton-pass-common:
+    url: https://github.com/protonpass/proton-pass-common.git
+    enabled: true
+    extractors: []

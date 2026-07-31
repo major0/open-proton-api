@@ -26,43 +26,19 @@ $(VENV)/bin/python:
 	$(VENV)/bin/pre-commit install --hook-type commit-msg
 
 # --- Fetch ---
-fetch:
+fetch: $(VENV)/bin/python
 	scripts/fetch-sources.sh
 
 # --- Extract (independent per source, parallelizable with -j) ---
-# Extractors that have been implemented (add modules here as they are built)
-EXTRACTORS := protondrive_sdk_ts webclient go_proton_api
-
 extract: fetch $(VENV)/bin/python
-	@for mod in $(EXTRACTORS); do \
+	@for mod in $$($(PYTHON) -m src.config extractors); do \
 		echo "Running extractor: $${mod}"; \
 		$(PYTHON) -m "src.extractors.$${mod}" || exit 1; \
 	done
-	@if test -z "$(EXTRACTORS)"; then \
-		echo "No extractors implemented yet — skipping extract."; \
-	fi
 
-# Individual extractor targets for incremental use
-extract-protondrive-sdk-ts: fetch
-	$(PYTHON) -m src.extractors.protondrive_sdk_ts
-
-extract-webclient: fetch
-	$(PYTHON) -m src.extractors.webclient
-
-extract-protondrive-sdk-cs: fetch
-	$(PYTHON) -m src.extractors.protondrive_sdk_cs
-
-extract-protondrive-sdk-kt: fetch
-	$(PYTHON) -m src.extractors.protondrive_sdk_kt
-
-extract-protondrive-sdk-swift: fetch
-	$(PYTHON) -m src.extractors.protondrive_sdk_swift
-
-extract-go-proton-api: fetch
-	$(PYTHON) -m src.extractors.go_proton_api
-
-extract-proton-bridge: fetch
-	$(PYTHON) -m src.extractors.proton_bridge
+# Individual extractor targets for manual/incremental use
+extract-%: fetch $(VENV)/bin/python
+	$(PYTHON) -m src.extractors.$*
 
 # --- Compact ---
 compact: extract

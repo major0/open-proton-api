@@ -42,17 +42,22 @@ fetch_repo() {
   unset _dest
 }
 
-# Resolve sources directory relative to this script
+# Resolve directories relative to this script
 SCRIPT_DIR="$(cd "$(dirname "${0}")" && pwd)"
-SOURCES_DIR="${SCRIPT_DIR}/../sources"
+PROJECT_DIR="${SCRIPT_DIR}/.."
+SOURCES_DIR="${PROJECT_DIR}/sources"
+PYTHON="${PROJECT_DIR}/.venv/bin/python"
+
 mkdir -p "${SOURCES_DIR}"
 
-# Fetch all source repositories
-fetch_repo protondrive-sdk 'https://github.com/ProtonDriveApps/sdk.git'
-fetch_repo webclient       'https://github.com/ProtonMail/WebClients.git'
-fetch_repo go-proton-api   'https://github.com/ProtonMail/go-proton-api.git'
-fetch_repo proton-bridge   'https://github.com/ProtonMail/proton-bridge.git'
+# Read enabled sources from config
+test -x "${PYTHON}" || die "venv not set up — run make first"
+
+"${PYTHON}" -m src.config urls | while read -r _name _url; do
+  fetch_repo "${_name}" "${_url}"
+done
+unset _name _url
 
 echo 'All sources fetched.'
 
-unset SCRIPT_DIR SOURCES_DIR
+unset SCRIPT_DIR PROJECT_DIR SOURCES_DIR PYTHON
