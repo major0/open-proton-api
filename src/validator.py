@@ -16,11 +16,7 @@ def load_schema() -> dict:
 
 def find_endpoint_files(api_dir: Path) -> list[Path]:
     """Find all JSON files in the api/ tree, excluding common.json and meta.json."""
-    return sorted(
-        p
-        for p in api_dir.rglob("*.json")
-        if p.name not in ("common.json", "meta.json")
-    )
+    return sorted(p for p in api_dir.rglob("*.json") if p.name not in ("common.json", "meta.json"))
 
 
 def validate_file(path: Path, schema: dict) -> list[str]:
