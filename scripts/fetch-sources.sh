@@ -48,9 +48,9 @@ SOURCES_DIR="${SCRIPT_DIR}/../sources"
 mkdir -p "${SOURCES_DIR}"
 
 # Fetch all source repositories
-fetch_repo protondrive-sdk 'https://github.com/nicois/protondrive-sdk.git'
-fetch_repo webclient       'https://github.com/nicois/WebClients.git'
-fetch_repo go-proton-api   'https://github.com/nicois/go-proton-api.git'
+fetch_repo protondrive-sdk 'https://github.com/ProtonDriveApps/sdk.git'
+fetch_repo webclient       'https://github.com/ProtonMail/WebClients.git'
+fetch_repo go-proton-api   'https://github.com/ProtonMail/go-proton-api.git'
 fetch_repo proton-bridge   'https://github.com/ProtonMail/proton-bridge.git'
 
 echo 'All sources fetched.'
