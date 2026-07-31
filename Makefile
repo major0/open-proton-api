@@ -1,16 +1,13 @@
 .PHONY: all fetch extract compact render validate report clean distclean help
 
-# Use the venv Python if available, fall back to system
-VENV := .venv/bin
-PYTHON := $(if $(wildcard $(VENV)/python),$(VENV)/python,python3)
-
-# Extractors that have been implemented (add modules here as they are built)
-EXTRACTORS :=
+VENV := .venv
+PYTHON := $(VENV)/bin/python
 
 all: validate
 
 help:
 	@echo "Targets:"
+	@echo "  setup    - Create virtualenv and install dependencies"
 	@echo "  fetch    - Clone/update source repositories into sources/"
 	@echo "  extract  - Run all implemented extractors (emits per-source JSON into api/)"
 	@echo "  compact  - Compute common.json and reduce source files to deltas"
@@ -19,13 +16,24 @@ help:
 	@echo "  report   - Generate provenance and gap analysis reports"
 	@echo "  all      - Full pipeline (fetch → extract → compact → render → validate)"
 	@echo "  clean    - Remove generated output and provenance files"
+	@echo "  distclean - clean + remove sources and venv"
+
+# --- Setup (create venv if missing) ---
+$(VENV)/bin/python:
+	python3 -m venv $(VENV)
+	$(VENV)/bin/pip install -e ".[dev]"
+	$(VENV)/bin/pre-commit install
+	$(VENV)/bin/pre-commit install --hook-type commit-msg
 
 # --- Fetch ---
 fetch:
 	scripts/fetch-sources.sh
 
 # --- Extract (independent per source, parallelizable with -j) ---
-extract: fetch
+# Extractors that have been implemented (add modules here as they are built)
+EXTRACTORS :=
+
+extract: fetch $(VENV)/bin/python
 	@for mod in $(EXTRACTORS); do \
 		echo "Running extractor: $${mod}"; \
 		$(PYTHON) -m "src.extractors.$${mod}" || exit 1; \
@@ -65,7 +73,7 @@ render: compact
 	@echo "Renderer not yet implemented — skipping."
 
 # --- Validate ---
-validate: render
+validate: render $(VENV)/bin/python
 	$(PYTHON) -m src.validator
 
 # --- Report ---
