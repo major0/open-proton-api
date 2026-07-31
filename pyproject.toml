@@ -1,0 +1,44 @@
+[project]
+name = "open-proton-api"
+version = "0.1.0"
+description = "Proton API specification compiler — extracts, compiles, and renders the complete Proton API surface from all available SDKs"
+requires-python = ">=3.11"
+dependencies = [
+    "tree-sitter==0.23.2",
+    "tree-sitter-typescript==0.23.2",
+    "tree-sitter-c-sharp==0.23.1",
+    "tree-sitter-go==0.23.4",
+    "tree-sitter-kotlin==1.1.0",
+    "tree-sitter-swift==0.7.3",
+    "jsonschema==4.23.0",
+    "openapi-spec-validator==0.7.1",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest==8.3.4",
+    "ruff==0.8.6",
+]
+
+[project.scripts]
+opa-validate = "src.validator:main"
+opa-compact = "src.compactor:main"
+opa-render = "src.renderer:main"
+opa-report = "src.report:main"
+opa-extract-protondrive-sdk-ts = "src.extractors.protondrive_sdk_ts:main"
+opa-extract-webclient = "src.extractors.webclient:main"
+opa-extract-protondrive-sdk-cs = "src.extractors.protondrive_sdk_cs:main"
+opa-extract-protondrive-sdk-kt = "src.extractors.protondrive_sdk_kt:main"
+opa-extract-protondrive-sdk-swift = "src.extractors.protondrive_sdk_swift:main"
+opa-extract-go-proton-api = "src.extractors.go_proton_api:main"
+opa-extract-proton-bridge = "src.extractors.proton_bridge:main"
+
+[build-system]
+requires = ["setuptools>=75.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.ruff]
+line-length = 100
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

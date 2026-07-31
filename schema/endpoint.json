@@ -1,0 +1,118 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://open-proton-api.dev/schema/endpoint.json",
+  "title": "Proton API Endpoint Definition",
+  "description": "Schema for per-source endpoint definitions emitted by extractors and consumed by the compactor/renderer.",
+  "type": "object",
+  "required": ["path", "operations"],
+  "additionalProperties": false,
+  "properties": {
+    "path": {
+      "type": "string",
+      "description": "Canonical REST path with {paramName} placeholders.",
+      "pattern": "^/"
+    },
+    "pathParams": {
+      "type": "object",
+      "description": "Path parameter definitions.",
+      "additionalProperties": { "$ref": "#/$defs/fieldSchema" }
+    },
+    "operations": {
+      "type": "object",
+      "description": "HTTP operations keyed by method (GET, POST, PUT, DELETE, PATCH).",
+      "propertyNames": {
+        "enum": ["GET", "POST", "PUT", "DELETE", "PATCH"]
+      },
+      "additionalProperties": { "$ref": "#/$defs/operation" },
+      "minProperties": 1
+    }
+  },
+  "$defs": {
+    "operation": {
+      "type": "object",
+      "properties": {
+        "operationId": {
+          "type": "string",
+          "description": "Unique operation identifier."
+        },
+        "summary": {
+          "type": "string",
+          "description": "Brief description of the operation."
+        },
+        "description": {
+          "type": "string",
+          "description": "Detailed description."
+        },
+        "queryParams": {
+          "type": "object",
+          "description": "Query parameter definitions.",
+          "additionalProperties": { "$ref": "#/$defs/fieldSchema" }
+        },
+        "requestBody": { "$ref": "#/$defs/requestBody" },
+        "responses": {
+          "type": "object",
+          "description": "Response definitions keyed by HTTP status code.",
+          "propertyNames": { "pattern": "^[0-9]{3}$" },
+          "additionalProperties": { "$ref": "#/$defs/responseBody" }
+        }
+      },
+      "additionalProperties": false
+    },
+    "requestBody": {
+      "type": "object",
+      "properties": {
+        "contentType": {
+          "type": "string",
+          "default": "application/json"
+        },
+        "fields": {
+          "type": "object",
+          "additionalProperties": { "$ref": "#/$defs/fieldSchema" }
+        },
+        "required": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      },
+      "additionalProperties": false
+    },
+    "responseBody": {
+      "type": "object",
+      "properties": {
+        "description": { "type": "string" },
+        "contentType": {
+          "type": "string",
+          "default": "application/json"
+        },
+        "fields": {
+          "type": "object",
+          "additionalProperties": { "$ref": "#/$defs/fieldSchema" }
+        }
+      },
+      "additionalProperties": false
+    },
+    "fieldSchema": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["string", "integer", "number", "boolean", "object", "array"]
+        },
+        "nullable": { "type": "boolean" },
+        "enum": { "type": "array" },
+        "items": { "$ref": "#/$defs/fieldSchema" },
+        "fields": {
+          "type": "object",
+          "additionalProperties": { "$ref": "#/$defs/fieldSchema" }
+        },
+        "required": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "description": { "type": "string" },
+        "default": {}
+      },
+      "additionalProperties": false
+    }
+  }
+}

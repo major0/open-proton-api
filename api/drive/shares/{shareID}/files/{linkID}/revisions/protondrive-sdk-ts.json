@@ -1,0 +1,73 @@
+{
+  "path": "/drive/shares/{shareID}/files/{linkID}/revisions",
+  "pathParams": {
+    "shareID": { "type": "string", "description": "Encrypted share ID" },
+    "linkID": { "type": "string", "description": "Encrypted link ID" }
+  },
+  "operations": {
+    "POST": {
+      "operationId": "createFileRevision",
+      "summary": "Create a new draft revision on an existing file",
+      "requestBody": {
+        "contentType": "application/json",
+        "fields": {
+          "CurrentRevisionID": {
+            "type": "string",
+            "nullable": true,
+            "description": "Base revision ID for COW block inheritance. Null for first revision."
+          },
+          "ClientUID": {
+            "type": "string",
+            "nullable": true,
+            "description": "Client-generated unique ID for draft recovery on failure."
+          },
+          "IntendedUploadSize": {
+            "type": "integer",
+            "nullable": true,
+            "description": "Intended upload file size in bytes for server-side validation."
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "fields": {
+            "Code": { "type": "integer", "enum": [1000] },
+            "Revision": {
+              "type": "object",
+              "fields": {
+                "ID": { "type": "string", "description": "Encrypted revision ID" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "GET": {
+      "operationId": "listFileRevisions",
+      "summary": "List all revisions of a file",
+      "responses": {
+        "200": {
+          "fields": {
+            "Code": { "type": "integer", "enum": [1000] },
+            "Revisions": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "fields": {
+                  "ID": { "type": "string" },
+                  "CreateTime": { "type": "integer", "nullable": true },
+                  "Size": { "type": "integer" },
+                  "State": { "type": "integer", "enum": [0, 1, 2], "description": "0=Draft, 1=Active, 2=Obsolete" },
+                  "ManifestSignature": { "type": "string", "nullable": true },
+                  "SignatureEmail": { "type": "string", "nullable": true },
+                  "Thumbnails": { "type": "array", "items": { "type": "object" } },
+                  "ClientUID": { "type": "string", "nullable": true }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
