@@ -31,7 +31,7 @@ fetch:
 
 # --- Extract (independent per source, parallelizable with -j) ---
 # Extractors that have been implemented (add modules here as they are built)
-EXTRACTORS := protondrive_sdk_ts webclient
+EXTRACTORS := protondrive_sdk_ts webclient go_proton_api
 
 extract: fetch $(VENV)/bin/python
 	@for mod in $(EXTRACTORS); do \
