@@ -28,12 +28,14 @@ sources:
   protoncore-android:
     url: https://github.com/ProtonMail/protoncore_android.git
     enabled: true
-    extractors: []
+    extractors:
+      - protoncore_android
 
   android-drive:
     url: https://github.com/ProtonDriveApps/android-drive.git
     enabled: true
-    extractors: []
+    extractors:
+      - android_drive
 
   ios-drive:
     url: https://github.com/ProtonDriveApps/ios-drive.git
@@ -48,7 +50,8 @@ sources:
   android-pass:
     url: https://github.com/protonpass/android-pass.git
     enabled: true
-    extractors: []
+    extractors:
+      - android_pass
 
   ios-pass:
     url: https://github.com/protonpass/ios-pass.git
