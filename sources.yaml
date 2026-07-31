@@ -40,7 +40,8 @@ sources:
   ios-drive:
     url: https://github.com/ProtonDriveApps/ios-drive.git
     enabled: true
-    extractors: []
+    extractors:
+      - ios_drive
 
   android-mail:
     url: https://github.com/ProtonMail/android-mail.git
@@ -56,7 +57,8 @@ sources:
   ios-pass:
     url: https://github.com/protonpass/ios-pass.git
     enabled: true
-    extractors: []
+    extractors:
+      - ios_pass
 
   proton-pass-common:
     url: https://github.com/protonpass/proton-pass-common.git
