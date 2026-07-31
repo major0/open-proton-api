@@ -217,6 +217,7 @@ def normalize_path(path: str) -> str:
     path = re.sub(r"/keys/\{id\}", "/keys/{keyId}", path)
     path = re.sub(r"/events/\{id\}", "/events/{eventId}", path)
     path = re.sub(r"/sessions/\{id\}", "/sessions/{sessionId}", path)
+    path = re.sub(r"/sessions/\{authUid\}", "/sessions/{uid}", path)
     path = re.sub(r"/devices/\{id\}", "/devices/{deviceId}", path)
     path = re.sub(r"/domains/\{id\}", "/domains/{domainId}", path)
     path = re.sub(r"/invitations/\{id\}", "/invitations/{invitationId}", path)
@@ -224,6 +225,7 @@ def normalize_path(path: str) -> str:
     path = re.sub(r"/shares/\{id\}", "/shares/{shareId}", path)
     path = re.sub(r"/links/\{id\}", "/links/{linkId}", path)
     path = re.sub(r"/messages/\{id\}", "/messages/{messageId}", path)
+    path = re.sub(r"/messages/\{draftId\}", "/messages/{messageId}", path)
     path = re.sub(r"/calendars/\{id\}", "/calendars/{calendarId}", path)
     path = re.sub(r"/notifications/\{id\}", "/notifications/{notificationId}", path)
 
