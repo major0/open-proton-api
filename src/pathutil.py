@@ -332,12 +332,45 @@ def write_endpoint(path: str, operations: dict, source_name: str) -> None:
     This is the single entry point all extractors should use for output.
     It ensures consistent path normalization and directory structure.
     Skips invalid/malformed paths silently.
+    Strips operationId (provenance noise) and empty type-name-only fields
+    (e.g. {"SomeType": {"type": "object"}} with no nested field detail).
     """
     normalized = normalize_path(path)
     if not is_valid_path(normalized):
         return
 
-    endpoint: dict = {"path": normalized, "operations": operations}
+    # Strip operationId and clean operations
+    cleaned_ops = {}
+    for method, op_data in operations.items():
+        cleaned = {}
+        for k, v in op_data.items():
+            if k == "operationId":
+                continue
+            if k == "requestBody":
+                fields = _strip_empty_fields(v.get("fields", {}))
+                if fields:
+                    cleaned["requestBody"] = {"contentType": "application/json", "fields": fields}
+            elif k == "responses":
+                cleaned_responses = {}
+                for code, resp in v.items():
+                    resp_fields = _strip_empty_fields(resp.get("fields", {}))
+                    if resp_fields:
+                        cleaned_responses[code] = {"fields": resp_fields}
+                if cleaned_responses:
+                    cleaned["responses"] = cleaned_responses
+            elif k == "queryParams":
+                if v:
+                    cleaned["queryParams"] = v
+            else:
+                cleaned[k] = v
+        cleaned_ops[method] = cleaned
+
+    # Skip if no operation has any real content (just empty method stubs)
+    has_content = any(cleaned_ops.values())
+    if not has_content:
+        return
+
+    endpoint: dict = {"path": normalized, "operations": cleaned_ops}
     path_params = extract_path_params(normalized)
     if path_params:
         endpoint["pathParams"] = path_params
@@ -348,3 +381,54 @@ def write_endpoint(path: str, operations: dict, source_name: str) -> None:
     with open(output_file, "w") as f:
         json.dump(endpoint, f, indent=2)
         f.write("\n")
+
+
+def _strip_empty_fields(fields: dict) -> dict:
+    """Remove fields that are just type-name references with no real detail.
+
+    A field like {"SomeResponse": {"type": "object"}} or
+    {"SomeRequest": {"type": "object", "description": "See SomeRequest type"}}
+    is just a type name — it tells us nothing about the actual schema.
+
+    Keep fields that have: nested fields, enum values, or are primitive types
+    with meaningful names (not just a type-name reference).
+    """
+    if not fields:
+        return {}
+
+    result = {}
+    for name, schema in fields.items():
+        if not isinstance(schema, dict):
+            continue
+        # Keep if it has nested fields (actual structure)
+        if "fields" in schema:
+            result[name] = schema
+            continue
+        # Keep if it has enum values
+        if "enum" in schema:
+            result[name] = schema
+            continue
+        # Keep primitive types (string, integer, number, boolean) — these are real
+        field_type = schema.get("type", "")
+        if field_type in ("string", "integer", "number", "boolean", "array"):
+            # But skip if the field name looks like a type reference
+            # (PascalCase ending in Response/Request/Dto)
+            if _is_type_reference_name(name):
+                continue
+            result[name] = schema
+            continue
+        # type: "object" with no fields — this is just a type name, skip
+        if field_type == "object" and "fields" not in schema:
+            continue
+
+    return result
+
+
+def _is_type_reference_name(name: str) -> bool:
+    """Check if a field name looks like a type reference rather than a real field.
+
+    Type references: GetShareBootstrapResponse, CreateFileRequest, CodeResponse
+    Real fields: Code, ShareID, CurrentRevisionID, Size, State
+    """
+    type_suffixes = ("Response", "Request", "Dto", "Data")
+    return any(name.endswith(s) for s in type_suffixes) and name[0].isupper()

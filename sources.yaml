@@ -33,13 +33,13 @@ sources:
 
   android-drive:
     url: https://github.com/ProtonDriveApps/android-drive.git
-    enabled: true
+    enabled: false  # 84% subsumed — only type-name references, no field detail
     extractors:
       - android_drive
 
   ios-drive:
     url: https://github.com/ProtonDriveApps/ios-drive.git
-    enabled: true
+    enabled: false  # Fully subsumed — contributes no unique field-level info
     extractors:
       - ios_drive
 
@@ -50,13 +50,13 @@ sources:
 
   android-pass:
     url: https://github.com/protonpass/android-pass.git
-    enabled: true
+    enabled: false  # Only contributes unresolved $PREFIX paths — extraction bug, no real unique data
     extractors:
       - android_pass
 
   ios-pass:
     url: https://github.com/protonpass/ios-pass.git
-    enabled: true
+    enabled: false  # Fully subsumed by android-pass — no unique field-level info
     extractors:
       - ios_pass
 

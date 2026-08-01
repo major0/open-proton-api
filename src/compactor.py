@@ -164,17 +164,15 @@ def compute_delta(source_data: dict, common: dict) -> dict:
 
     for op_name, op_data in source_ops.items():
         if op_name not in common_ops:
-            # Entire operation is unique to this source
-            delta.setdefault("operations", {})[op_name] = op_data
+            # Operation not in common — check if it has real content beyond operationId
+            real_keys = [k for k in op_data if k != "operationId"]
+            if real_keys:
+                delta.setdefault("operations", {})[op_name] = op_data
             continue
 
         # Operation is in common — check for unique fields
         common_op = common_ops[op_name]
         op_delta: dict = {}
-
-        # operationId is always source-specific
-        if "operationId" in op_data:
-            op_delta["operationId"] = op_data["operationId"]
 
         # Unique request body fields
         if op_data.get("requestBody"):
@@ -203,9 +201,8 @@ def compute_delta(source_data: dict, common: dict) -> dict:
             if unique_qp:
                 op_delta["queryParams"] = unique_qp
 
-        # Only include operation in delta if it has unique content beyond operationId
-        has_unique = any(k != "operationId" for k in op_delta)
-        if has_unique:
+        # Only include operation in delta if it has unique content
+        if op_delta:
             delta.setdefault("operations", {})[op_name] = op_delta
 
     return delta
