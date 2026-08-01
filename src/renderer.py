@@ -5,11 +5,15 @@ merges them into unified path entries, and outputs per-service OpenAPI specs.
 
 Generates canonical operationIds from method + path following RESTful
 conventions (e.g., GET /drive/shares/{shareId} → getShare).
+
+Output files are versioned with a date-based serial (YYYYMMDDNN) similar
+to DNS SOA serial numbers.
 """
 
 import json
 import re
 import sys
+from datetime import UTC, datetime
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).parent.parent
@@ -355,6 +359,31 @@ def _dedup_operation_ids(spec: dict) -> None:
                 seen[op_id] = 1
 
 
+def compute_serial() -> str:
+    """Compute a date-based serial version (YYYYMMDDNN).
+
+    Format matches DNS SOA serial convention. NN is a sequence number
+    starting at 01, incremented if multiple renders happen on the same day
+    (detected by checking existing output files).
+    """
+    today = datetime.now(UTC).strftime("%Y%m%d")
+
+    # Check for existing files from today to determine sequence number
+    existing = sorted(OUTPUT_DIR.glob(f"proton-*-api-{today}*.json"))
+    if existing:
+        # Extract the highest sequence number from today's files
+        max_seq = 0
+        for f in existing:
+            m = re.search(rf"{today}(\d{{2}})", f.name)
+            if m:
+                max_seq = max(max_seq, int(m.group(1)))
+        seq = max_seq + 1
+    else:
+        seq = 1
+
+    return f"{today}{seq:02d}"
+
+
 def main() -> None:
     """Entry point for the renderer."""
     if not API_DIR.exists():
@@ -382,16 +411,25 @@ def main() -> None:
         service_paths.setdefault(service, {})[path] = path_item
         all_paths[path] = path_item
 
+    # Compute version serial
+    serial = compute_serial()
+
     # Write per-service specs
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     for service, paths in sorted(service_paths.items()):
         spec = render_service_spec(service, paths)
+        spec["info"]["version"] = serial
         _dedup_operation_ids(spec)
-        output_file = OUTPUT_DIR / f"openapi-{service}.json"
-        with open(output_file, "w") as f:
-            json.dump(spec, f, indent=2)
-            f.write("\n")
-        print(f"  {service}: {len(paths)} paths → {output_file.name}")
+
+        # Versioned artifact: proton-<service>-api-<serial>.json
+        versioned_file = OUTPUT_DIR / f"proton-{service}-api-{serial}.json"
+        # Latest symlink-style file for linter/tooling
+        latest_file = OUTPUT_DIR / f"openapi-{service}.json"
+        for output_file in (versioned_file, latest_file):
+            with open(output_file, "w") as f:
+                json.dump(spec, f, indent=2)
+                f.write("\n")
+        print(f"  {service}: {len(paths)} paths → {versioned_file.name}")
 
     # Write unified spec
     unified = render_service_spec("all", all_paths)
@@ -400,6 +438,7 @@ def main() -> None:
         "Complete OpenAPI specification for all Proton services, "
         "compiled from multiple official SDK sources."
     )
+    unified["info"]["version"] = serial
     # For unified spec, prefix operationIds with service name to avoid cross-service collisions
     for path_str, path_item in unified.get("paths", {}).items():
         service = detect_service(path_str)
@@ -411,10 +450,13 @@ def main() -> None:
                         service + op["operationId"][0].upper() + op["operationId"][1:]
                     )
     _dedup_operation_ids(unified)
-    unified_file = OUTPUT_DIR / "openapi-all.json"
-    with open(unified_file, "w") as f:
-        json.dump(unified, f, indent=2)
-        f.write("\n")
+
+    versioned_unified = OUTPUT_DIR / f"proton-all-api-{serial}.json"
+    latest_unified = OUTPUT_DIR / "openapi-all.json"
+    for output_file in (versioned_unified, latest_unified):
+        with open(output_file, "w") as f:
+            json.dump(unified, f, indent=2)
+            f.write("\n")
 
     total_paths = len(all_paths)
     total_ops = sum(
@@ -424,7 +466,7 @@ def main() -> None:
     print(
         f"\nTotal: {total_paths} paths, {total_ops} operations across {len(service_paths)} services"
     )
-    print(f"Unified spec: {unified_file}")
+    print(f"Unified spec: {versioned_unified}")
 
 
 if __name__ == "__main__":
