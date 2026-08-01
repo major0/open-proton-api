@@ -303,11 +303,12 @@ def resolve_schema_ref(ref_name: str, schemas: dict[str, dict], depth: int = 0) 
     if not schema:
         return {"type": "object", "description": ref_name}
 
+    # Check if it's a simple type first (has 'type' key at top level)
+    if isinstance(schema, dict) and "type" in schema:
+        return schema
+
     # If schema has fields (is an object type), inline them
     if isinstance(schema, dict) and all(isinstance(v, dict) for v in schema.values()):
-        # Check if it's a simple type (has 'type' key at top level)
-        if "type" in schema:
-            return schema
         # It's an object with fields
         resolved_fields = {}
         for fname, fdef in schema.items():
@@ -317,6 +318,11 @@ def resolve_schema_ref(ref_name: str, schemas: dict[str, dict], depth: int = 0) 
                 if isinstance(desc, str) and desc.startswith("$ref:"):
                     inner_ref = desc[5:]
                     resolved = resolve_schema_ref(inner_ref, schemas, depth + 1)
+                    # Preserve nullable from the original field
+                    if fdef.get("nullable"):
+                        resolved = {**resolved, "nullable": True}
+                    # If resolved to a simple type, use it directly
+                    # (don't lose the field's identity by replacing with bare object)
                     resolved_fields[fname] = resolved
                 else:
                     resolved_fields[fname] = fdef
