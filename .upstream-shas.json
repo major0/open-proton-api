@@ -1,0 +1,8 @@
+{
+  "protondrive-sdk": "941aafa55fb179c8ee347c9d0b4660a3fc893f09",
+  "webclient": "604e54473b54d836b99a326bef829e6932eb98fc",
+  "go-proton-api": "8a8be48eed4abe92c3d2d23b965c8a9f6e00dd81",
+  "proton-bridge": "1176fb90904d976bccbd57eda8cb31a2747895f2",
+  "protoncore-android": "1b87f94ebfdfaf5e67145e8668efc52dbb931e0b",
+  "proton-pass-common": "65bb8448a41098686c9305265d2312c79d4dcef8"
+}
