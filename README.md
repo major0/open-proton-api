@@ -84,7 +84,7 @@ Rendered specs are published as versioned artifacts:
 proton-drive-api-2025073101.json
 proton-core-api-2025073101.json
 proton-mail-api-2025073101.json
-proton-all-api-2025073101.json
+proton-full-api-2025073101.json
 ```
 
 Version format: `YYYYMMDDNN` (date-based serial, NN is a sequence number for
@@ -99,7 +99,7 @@ Per-service specs:
 | `proton-mail-api` | 44 | Messages, conversations, attachments, labels, filters |
 | `proton-calendar-api` | 13 | Events, calendars, attendees, alarms |
 | `proton-meet-api` | 5 | Meetings, participants, access tokens |
-| `proton-all-api` | 435 | Unified spec, all services (527 operations) |
+| `proton-full-api` | 435 | All services combined (527 operations) |
 
 ## Directory Structure
 

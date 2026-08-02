@@ -421,19 +421,15 @@ def main() -> None:
         spec["info"]["version"] = serial
         _dedup_operation_ids(spec)
 
-        # Versioned artifact: proton-<service>-api-<serial>.json
-        versioned_file = OUTPUT_DIR / f"proton-{service}-api-{serial}.json"
-        # Latest symlink-style file for linter/tooling
-        latest_file = OUTPUT_DIR / f"openapi-{service}.json"
-        for output_file in (versioned_file, latest_file):
-            with open(output_file, "w") as f:
-                json.dump(spec, f, indent=2)
-                f.write("\n")
-        print(f"  {service}: {len(paths)} paths → {versioned_file.name}")
+        output_file = OUTPUT_DIR / f"proton-{service}-api-{serial}.json"
+        with open(output_file, "w") as f:
+            json.dump(spec, f, indent=2)
+            f.write("\n")
+        print(f"  {service}: {len(paths)} paths → {output_file.name}")
 
     # Write unified spec
     unified = render_service_spec("all", all_paths)
-    unified["info"]["title"] = "Proton API (Unified)"
+    unified["info"]["title"] = "Proton API (Full)"
     unified["info"]["description"] = (
         "Complete OpenAPI specification for all Proton services, "
         "compiled from multiple official SDK sources."
@@ -451,12 +447,10 @@ def main() -> None:
                     )
     _dedup_operation_ids(unified)
 
-    versioned_unified = OUTPUT_DIR / f"proton-all-api-{serial}.json"
-    latest_unified = OUTPUT_DIR / "openapi-all.json"
-    for output_file in (versioned_unified, latest_unified):
-        with open(output_file, "w") as f:
-            json.dump(unified, f, indent=2)
-            f.write("\n")
+    unified_file = OUTPUT_DIR / f"proton-full-api-{serial}.json"
+    with open(unified_file, "w") as f:
+        json.dump(unified, f, indent=2)
+        f.write("\n")
 
     total_paths = len(all_paths)
     total_ops = sum(
@@ -466,7 +460,7 @@ def main() -> None:
     print(
         f"\nTotal: {total_paths} paths, {total_ops} operations across {len(service_paths)} services"
     )
-    print(f"Unified spec: {versioned_unified}")
+    print(f"Unified spec: {unified_file}")
 
 
 if __name__ == "__main__":

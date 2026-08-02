@@ -260,7 +260,7 @@ def print_findings(findings: list[dict]) -> tuple[int, int, int]:
 
 def main() -> None:
     """Entry point for the custom linter."""
-    spec_files = sorted(OUTPUT_DIR.glob("openapi-*.json"))
+    spec_files = sorted(OUTPUT_DIR.glob("proton-*-api-*.json"))
 
     if not spec_files:
         print("No rendered specs found in output/. Run 'make render' first.", file=sys.stderr)
