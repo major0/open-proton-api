@@ -171,10 +171,36 @@ def field_to_schema(field_def: dict) -> dict:
     return schema
 
 
+def generate_tag(path: str) -> str:
+    """Generate a tag from the path's primary resource grouping.
+
+    Uses the first 1-2 non-param, non-version segments after the service
+    prefix. This groups operations by top-level resource.
+
+    /drive/shares/{shareId}/files/{linkId}/revisions → shares
+    /drive/photos/volumes/{volumeId}/albums → photos
+    /mail/v4/messages/{messageId}/attachments → messages
+    /core/v4/addresses/{addressId}/keys → addresses
+    """
+    segments = [
+        s for s in path.split("/") if s and not s.startswith("{") and not re.match(r"^v\d+$", s)
+    ]
+    # Skip service prefix
+    if segments and segments[0] in KNOWN_SERVICES:
+        segments = segments[1:]
+
+    if not segments:
+        return "other"
+
+    # Use first segment as tag (top-level resource grouping)
+    return segments[0]
+
+
 def build_operation(method: str, path: str, op_data: dict) -> dict:
     """Build an OpenAPI operation object from our internal format."""
     operation: dict = {
         "operationId": generate_operation_id(method, path),
+        "tags": [generate_tag(path)],
     }
 
     # Query parameters
@@ -325,6 +351,14 @@ def build_path_item(endpoint: dict) -> dict:
 
 def render_service_spec(service: str, paths: dict[str, dict]) -> dict:
     """Build a complete OpenAPI 3.1 spec for a service."""
+    # Collect all unique tags used across operations
+    tags_seen: set[str] = set()
+    for path_item in paths.values():
+        for method in ("get", "post", "put", "delete", "patch"):
+            if method in path_item:
+                for tag in path_item[method].get("tags", []):
+                    tags_seen.add(tag)
+
     return {
         "openapi": "3.1.0",
         "info": {
@@ -337,6 +371,7 @@ def render_service_spec(service: str, paths: dict[str, dict]) -> dict:
             "contact": {"name": "open-proton-api", "url": "https://github.com/open-proton-api"},
         },
         "servers": [{"url": "https://mail.proton.me/api", "description": "Proton API"}],
+        "tags": [{"name": tag} for tag in sorted(tags_seen)],
         "paths": dict(sorted(paths.items())),
     }
 
