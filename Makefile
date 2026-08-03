@@ -1,4 +1,4 @@
-.PHONY: all fetch extract compact render validate report clean distclean help
+.PHONY: all fetch extract compact render validate lint report release clean distclean help
 
 VENV := .venv
 PYTHON := $(VENV)/bin/python
@@ -42,19 +42,26 @@ extract-%: fetch $(VENV)/bin/python
 
 # --- Compact ---
 compact: extract
-	@echo "Compactor not yet implemented — skipping."
+	$(PYTHON) -m src.compactor
 
 # --- Render ---
 render: compact
-	@echo "Renderer not yet implemented — skipping."
+	$(PYTHON) -m src.renderer
 
 # --- Validate ---
 validate: render $(VENV)/bin/python
 	$(PYTHON) -m src.validator
+	$(PYTHON) -m src.lint
 
 # --- Report ---
 report: compact
 	@echo "Report not yet implemented — skipping."
+
+# --- Release ---
+release: validate
+	gh release create "v$$(date -u +%Y%m%d)01" output/proton-*-api-*.json \
+		--title "v$$(date -u +%Y%m%d)01" \
+		--notes "Proton API specs compiled from official SDKs. Run: $$(date -u +%Y-%m-%d)"
 
 # --- Clean ---
 clean:
