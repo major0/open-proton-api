@@ -77,21 +77,37 @@ def extract_path_params(url: str) -> dict[str, dict]:
 def extract_data_fields(block: str) -> dict[str, dict] | None:
     """Try to extract request body field names from the data object in a block.
 
-    This is best-effort — we can extract field names from inline objects
-    but not resolve complex types.
+    Handles two patterns:
+    1. Explicit key-value: data: { CurrentRevisionID: currentRevisionId, ... }
+       → Extract only keys (left side of colon)
+    2. Shorthand: data: { Email, MaxSpace, ... }
+       → Word followed by comma/closing brace (no colon after it)
+
+    Only extracts the actual JSON property names sent over the wire.
     """
-    # Look for data: { Key1, Key2, ... } pattern (shorthand properties)
+    # Look for data: { ... } pattern
     data_match = re.search(r"data:\s*\{([^}]+)\}", block, re.DOTALL)
     if data_match:
         content = data_match.group(1)
-        # Extract property names (Key: value or just Key,)
         fields = {}
-        for m in re.finditer(r"(\w+)\s*[,:}]", content):
+
+        # Pattern 1: explicit key: value pairs
+        for m in re.finditer(r"(\w+)\s*:", content):
             name = m.group(1)
-            # Skip common non-field keywords
-            if name in ("method", "url", "data", "params", "undefined", "Number", "true", "false"):
+            if name in _DATA_SKIP_WORDS:
                 continue
             fields[name] = {"type": "string"}
+
+        # Pattern 2: shorthand properties (word followed by , or end)
+        # Only pick these up if we found NO explicit keys (avoids double-capture)
+        if not fields:
+            for m in re.finditer(r"(\w+)\s*[,}]", content):
+                name = m.group(1)
+                if name in _DATA_SKIP_WORDS:
+                    continue
+                # Skip if this word also appears as a value (after a colon)
+                fields[name] = {"type": "string"}
+
         if fields:
             return fields
 
@@ -103,6 +119,27 @@ def extract_data_fields(block: str) -> dict[str, dict] | None:
             return {var_name: {"type": "object", "description": f"See {var_name} type"}}
 
     return None
+
+
+_DATA_SKIP_WORDS = frozenset(
+    {
+        "method",
+        "url",
+        "data",
+        "params",
+        "undefined",
+        "Number",
+        "true",
+        "false",
+        "timeout",
+        "silence",
+        "input",
+        "output",
+        "credentials",
+        "ignoreHandler",
+        "null",
+    }
+)
 
 
 def extract_query_params(block: str) -> dict[str, dict] | None:

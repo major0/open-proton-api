@@ -222,6 +222,8 @@ def build_operation(method: str, path: str, op_data: dict) -> dict:
         properties = {}
         for name, fdef in rb.get("fields", {}).items():
             properties[name] = field_to_schema(fdef)
+        # Deduplicate case collisions (prefer PascalCase — matches wire format)
+        properties = _dedup_case_collisions(properties)
         if properties:
             operation["requestBody"] = {
                 "content": {
@@ -241,6 +243,7 @@ def build_operation(method: str, path: str, op_data: dict) -> dict:
             resp_schema: dict = {"description": f"HTTP {code}"}
             if resp.get("fields"):
                 properties = {name: field_to_schema(fdef) for name, fdef in resp["fields"].items()}
+                properties = _dedup_case_collisions(properties)
                 resp_schema["content"] = {
                     "application/json": {
                         "schema": {
@@ -374,6 +377,31 @@ def render_service_spec(service: str, paths: dict[str, dict]) -> dict:
         "tags": [{"name": tag} for tag in sorted(tags_seen)],
         "paths": dict(sorted(paths.items())),
     }
+
+
+def _dedup_case_collisions(properties: dict) -> dict:
+    """Remove case-only collisions from a properties dict.
+
+    When two keys differ only by case (e.g., IDs vs Ids), keep the one
+    with more uppercase letters (closer to Proton's wire format which
+    uses PascalCase with uppercase acronyms like ID, UID).
+    """
+    lower_map: dict[str, str] = {}
+    result: dict = {}
+    for key, val in properties.items():
+        lk = key.lower()
+        if lk in lower_map:
+            existing = lower_map[lk]
+            # Keep whichever has more uppercase (closer to wire format)
+            if sum(1 for c in key if c.isupper()) > sum(1 for c in existing if c.isupper()):
+                del result[existing]
+                result[key] = val
+                lower_map[lk] = key
+            # else keep existing, skip this one
+        else:
+            lower_map[lk] = key
+            result[key] = val
+    return result
 
 
 def _dedup_operation_ids(spec: dict) -> None:
