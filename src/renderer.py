@@ -205,8 +205,10 @@ def build_operation(method: str, path: str, op_data: dict) -> dict:
 
     # Query parameters
     if "queryParams" in op_data:
+        # Deduplicate case collisions in query params
+        deduped = _dedup_case_collisions(op_data["queryParams"])
         params = []
-        for name, pdef in op_data["queryParams"].items():
+        for name, pdef in deduped.items():
             params.append(
                 {
                     "name": name,
