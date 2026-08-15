@@ -49,6 +49,7 @@ KNOWN_SERVICES = {
     "tests",
     "payments",
     "shares",
+    "ai",
 }
 
 
@@ -64,6 +65,9 @@ def detect_service(api_path: str) -> str:
     if not segments:
         return "unknown"
     first = segments[0]
+    # ai is lumo (same product, different path prefix)
+    if first == "ai":
+        return "lumo"
     if first in KNOWN_SERVICES:
         return first
     return "other"
@@ -174,25 +178,34 @@ def field_to_schema(field_def: dict) -> dict:
 def generate_tag(path: str) -> str:
     """Generate a tag from the path's primary resource grouping.
 
-    Uses the first 1-2 non-param, non-version segments after the service
-    prefix. This groups operations by top-level resource.
+    Uses the first non-param, non-version segment after the service
+    prefix. If nothing remains after stripping, uses the service name.
 
     /drive/shares/{shareId}/files/{linkId}/revisions → shares
     /drive/photos/volumes/{volumeId}/albums → photos
     /mail/v4/messages/{messageId}/attachments → messages
     /core/v4/addresses/{addressId}/keys → addresses
+    /auth/v4 → auth
+    /contacts/v4 → contacts
+    /ai/v1/feedback → feedback
     """
     segments = [
         s for s in path.split("/") if s and not s.startswith("{") and not re.match(r"^v\d+$", s)
     ]
-    # Skip service prefix
-    if segments and segments[0] in KNOWN_SERVICES:
-        segments = segments[1:]
 
     if not segments:
         return "other"
 
-    # Use first segment as tag (top-level resource grouping)
+    # If first segment is a service, try to use the next segment as tag
+    if segments[0] in KNOWN_SERVICES:
+        service = segments[0]
+        remaining = segments[1:]
+        if remaining:
+            return remaining[0]
+        # No resource after service — use service name itself as tag
+        return service
+
+    # First segment is the tag
     return segments[0]
 
 
